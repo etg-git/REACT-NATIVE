@@ -88,7 +88,7 @@ class FCMService {
       } else {
         console.log('background notification error', error);
       }
-      alert(remoteMessage.body);
+      console.log(remoteMessage.body);
     });
 
     //Check whether an initial notification is available

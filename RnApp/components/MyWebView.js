@@ -3,7 +3,7 @@ import {BackHandler} from 'react-native';
 import {WebView} from 'react-native-webview';
 
 const MyWebView= ({handleClose}) => {
-  const BASE_URL = 'https://mshms.andami.kr';
+  const BASE_URL = 'https://safetydoumi-m.andami.kr';
   // const [webview, setWebview] = useState();
   // const [goBackable, setGoBackable] = useState(false);
   // useEffect(() => {
@@ -34,7 +34,6 @@ const MyWebView= ({handleClose}) => {
       overScrollMode={'never'}
       // ref={(ref) => setWebview(ref)}
 
-      // View가 로드될 때 자바스크립트를 웹 페이지에 주입
       injectedJavaScript={` 
       (function() {
           function wrap(fn) {
@@ -55,8 +54,6 @@ const MyWebView= ({handleClose}) => {
 
       // WebView가 window.postMessage를 call하면 호출되는 것
       onMessage={(event) => {
-        const url = event.nativeEvent.data;
-        // setGoBackable(url !== BASE_URL);
         console.log('onMessage', event.nativeEvent.data);
       }}
     />
