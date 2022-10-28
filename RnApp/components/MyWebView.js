@@ -1,29 +1,48 @@
-import React, {useEffect, useState} from 'react';
-import {BackHandler} from 'react-native';
+import React, {useRef, useEffect, useState} from 'react';
+import {Alert, BackHandler} from 'react-native';
 import {WebView} from 'react-native-webview';
 
-const MyWebView= ({handleClose}) => {
+const MyWebView= () => {
+  const webview = useRef();
   const BASE_URL = 'https://safetydoumi-m.andami.kr';
-  // const [webview, setWebview] = useState();
-  // const [goBackable, setGoBackable] = useState(false);
-  // useEffect(() => {
-  //   const backHandler = BackHandler.addEventListener(
-  //     'hardwareBackPress',
-  //     () => {
-  //       console.log('goBackable', goBackable);
-  //       if (goBackable) webview.goBack();
-  //       else handleClose();
-  //       return true;
-  //     },
-  //   );
-  //   return () => backHandler.remove();
-  // }, [goBackable]);
+  const [isNotBackUrl, setIsNotBackUrl] = useState(false); // 특정 url 여부
+  const [isCanGoBack, setIsCanGoBack] = useState(false); // history back이 더이상 없을경우
 
-  // useEffect(() => {
-  //   if (webview && webview.clearCache) webview.clearCache();
-  // }, [webview]);
+  const onPressHardwareBackButton = () => {
+    if (webview.current && isCanGoBack && isNotBackUrl) {
+      webview.current.goBack();
+      return true;
+    } else {
+      Alert.alert('앱 종료하기', '앱을 종료하시겠습니까?', [
+        {
+          text: '취소',
+          onPress: () => {
+            null
+          },
+        },
+        { 
+          text: '확인', 
+          onPress: () => {
+            BackHandler.exitApp()
+          },
+        }                                                                                 
+      ]);
+      return true;
+    }
+  };
+  useEffect(() => {
+    BackHandler.addEventListener('hardwareBackPress', onPressHardwareBackButton);
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', onPressHardwareBackButton);
+    }
+  }, [isCanGoBack, isNotBackUrl]);
   return (
     <WebView
+      ref={webview}
+      style={{
+        overflow: 'hidden',
+        opacity: .99,
+      }}
       pullToRefreshEnabled={true}
       startInLoadingState={true}
       allowsBackForwardNavigationGestures={true}
@@ -33,28 +52,38 @@ const MyWebView= ({handleClose}) => {
       originWhitelist={['https://*', 'http://*']}
       overScrollMode={'never'}
       // ref={(ref) => setWebview(ref)}
-
-      injectedJavaScript={` 
-      (function() {
+      // View가 로드될 때 자바스크립트를 웹 페이지에 주입
+      injectedJavaScript={`
+        (function() {
           function wrap(fn) {
-          return function wrapper() {
+            return function wrapper() {
               var res = fn.apply(this, arguments);
-              window.ReactNativeWebView.postMessage(window.location.href);
+              window.ReactNativeWebView.postMessage('navigationStateChange');
               return res;
+            }
           }
-          }
+    
           history.pushState = wrap(history.pushState);
           history.replaceState = wrap(history.replaceState);
           window.addEventListener('popstate', function() {
-          window.ReactNativeWebView.postMessage(window.location.href);
+            window.ReactNativeWebView.postMessage('navigationStateChange');
           });
-      })();
-      true;
+        })();
+    
+        true;
       `}
-
-      // WebView가 window.postMessage를 call하면 호출되는 것
-      onMessage={(event) => {
-        console.log('onMessage', event.nativeEvent.data);
+      onMessage={({ nativeEvent: state }) => {
+        if (state.url === 'https://safetydoumi-m.andami.kr/' || state.url === 'https://safetydoumi-m.andami.kr/404') {
+          setIsNotBackUrl(false);
+        } else if (state.data === 'navigationStateChange') {
+          if (state.url === 'https://safetydoumi-m.andami.kr/main/index') {
+            setIsNotBackUrl(false);
+            setIsCanGoBack(state.canGoBack);
+          } else {
+            setIsNotBackUrl(true);
+            setIsCanGoBack(state.canGoBack);
+          }
+        }
       }}
     />
   );
