@@ -4,6 +4,7 @@
     "project_id": "rn-app-push",
     "storage_bucket": "rn-app-push.appspot.com"
   },
+  
   "client": [
     {
       "client_info": {
